@@ -480,3 +480,425 @@ Dans une approche Red Team, l’architecture observée permet de modéliser la c
 - Kibana permet leur consultation et leur analyse
 
 Cette interconnexion transforme des interactions applicatives simples en sources potentielles d’informations exploitables dans un contexte d’attaque.
+
+## VIII. Analyse des données indexées dans Elasticsearch
+
+Après avoir identifié plusieurs index accessibles sans authentification, nous avons cherché à déterminer si les données stockées pouvaient fournir des informations exploitables dans le cadre d'une phase de préparation d'attaque.
+
+L'objectif de cette étape est de vérifier si des journaux applicatifs, systèmes ou de sécurité contiennent des informations permettant d'améliorer notre connaissance de l'environnement cible.
+
+**Objectifs :**
+
+- Identifier les types de données collectées.
+- Déterminer si des informations relatives à Joomla! sont indexées.
+- Rechercher d'éventuelles informations sensibles.
+- Valider l'hypothèse d'un lien entre les composants applicatifs et la stack ELK.
+
+**Méthodologie :**
+
+Pour cela, nous allons utiliser les Dev Tools de Kibana pour interroger les différents index identifiés précédemment, en particulier ceux qui pourraient contenir des données issues de l'application Joomla!.
+
+1. Se connecter à Kibana et accéder aux Dev Tools. ([Lien rapide](http://10.156.115.137:5601/app/dev_tools#/console))
+2. Interroger les index pour identifier les données disponibles.
+
+   ```json
+   GET /_cat/indices?v
+   ```
+
+   **Résultat :**
+
+   ```plaintext
+   health status index                                                              uuid                   pri rep docs.count docs.deleted store.size pri.store.size dataset.size
+   green  open   .internal.alerts-transform.health.alerts-default-000001            n3DVPxCcTo2wTIZqT9lhOQ   1   0          0            0       249b           249b         249b
+   green  open   .internal.alerts-observability.logs.alerts-default-000001          i4SCasOqTyCsN6ia_X4gsg   1   0          0            0       249b           249b         249b
+   green  open   .internal.alerts-observability.uptime.alerts-default-000001        E-tOwgfiSE6nuu4aeKZ-Kg   1   0          0            0       249b           249b         249b
+   green  open   .internal.alerts-ml.anomaly-detection.alerts-default-000001        rXPMtQC8T8eM17z5I7wEVA   1   0          0            0       249b           249b         249b
+   yellow open   .ds-filebeat-8.19.16-2026.06.08-000001                             aBG9AduITleg17QvQXiBiA   1   1     526498            0    233.3mb        233.3mb      233.3mb
+   green  open   .internal.alerts-observability.slo.alerts-default-000001           -eG0cxmmSumMpr6sYgG1TQ   1   0          0            0       249b           249b         249b
+   green  open   .internal.alerts-default.alerts-default-000001                     kZDiS2STSn6r8vK-4-8dsA   1   0          0            0       249b           249b         249b
+   green  open   .internal.alerts-observability.apm.alerts-default-000001           bL5yBr8FRwOnjwbncpOnPA   1   0          0            0       249b           249b         249b
+   green  open   .internal.alerts-observability.metrics.alerts-default-000001       XrasKIDTR22p8xu7aNJ33w   1   0          0            0       249b           249b         249b
+   green  open   .kibana-observability-ai-assistant-conversations-000001            7W1yvG5_R8S-oIZcqKjTqw   1   0          0            0       249b           249b         249b
+   green  open   .internal.alerts-ml.anomaly-detection-health.alerts-default-000001 jNx3v4ttR4CJ-SusqYbs-A   1   0          0            0       249b           249b         249b
+   green  open   .internal.alerts-observability.threshold.alerts-default-000001     PjAvgd8iRu6cwYDR2U1NdA   1   0          0            0       249b           249b         249b
+   green  open   .internal.alerts-security.alerts-default-000001                    pxpuygJ0TeOZFoMMCG2svQ   1   0          0            0       249b           249b         249b
+   green  open   .kibana-observability-ai-assistant-kb-000001                       eXz01qvURFGb2y30sjDmqg   1   0          0            0       249b           249b         249b
+   green  open   .internal.alerts-stack.alerts-default-000001                       DvWarRkrQnSH4Im2ttVHdw   1   0          0            0       249b           249b         249b
+   ```
+
+   L'analyse de la liste des index met en évidence plusieurs éléments intéressants :
+   - la présence d'un index Filebeat contenant plus de 500 000 événements ;
+   - plusieurs index dédiés aux alertes de sécurité ;
+   - des composants liés à l'observabilité et à la supervision ;
+   - des index Kibana internes.
+
+   L'index `.ds-filebeat-*` apparaît comme la cible prioritaire de l'analyse en raison de son volume important et de sa probable concentration de journaux système et applicatifs.
+
+3. Sélectionner les index pertinents, notamment ceux liés à Filebeat ou aux logs applicatifs, et effectuer des requêtes pour explorer les données.
+
+   ```json
+   GET /.ds-filebeat-*/_search
+    {
+      "_source": [
+        "@timestamp",
+        "host.name",
+        "event.dataset",
+        "message"
+      ],
+      "size": 20
+    }
+   ```
+
+   **Résultats :**
+
+   ```json
+   {
+     "took": 15,
+     "timed_out": false,
+     "_shards": {
+       "total": 1,
+       "successful": 1,
+       "skipped": 0,
+       "failed": 0
+     },
+     "hits": {
+       "total": {
+         "value": 10000,
+         "relation": "gte"
+       },
+       "max_score": 1,
+       "hits": [
+         {
+           "_index": ".ds-filebeat-8.19.16-2026.06.08-000001",
+           "_id": "Uou1q54Bhi3Q8o036M1t",
+           "_score": 1,
+           "_source": {
+             "message": "",
+             "@timestamp": "2026-06-09T09:27:55.545Z",
+             "host": {
+               "name": "ubuntu-soc"
+             },
+             "event": {
+               "dataset": "suricata.eve"
+             }
+           }
+         },
+         {
+           "_index": ".ds-filebeat-8.19.16-2026.06.08-000001",
+           "_id": "U4u1q54Bhi3Q8o036M1t",
+           "_score": 1,
+           "_source": {
+             "message": "",
+             "@timestamp": "2026-06-09T09:27:55.547Z",
+             "host": {
+               "name": "ubuntu-soc"
+             },
+             "event": {
+               "dataset": "suricata.eve"
+             }
+           }
+         },
+         {
+           "_index": ".ds-filebeat-8.19.16-2026.06.08-000001",
+           "_id": "VIu1q54Bhi3Q8o036M1u",
+           "_score": 1,
+           "_source": {
+             "message": "",
+             "@timestamp": "2026-06-09T09:27:55.547Z",
+             "host": {
+               "name": "ubuntu-soc"
+             },
+             "event": {
+               "dataset": "suricata.eve"
+             }
+           }
+         },
+         {
+           "_index": ".ds-filebeat-8.19.16-2026.06.08-000001",
+           "_id": "VYu1q54Bhi3Q8o036M1u",
+           "_score": 1,
+           "_source": {
+             "message": "",
+             "@timestamp": "2026-06-09T09:27:55.594Z",
+             "host": {
+               "name": "ubuntu-soc"
+             },
+             "event": {
+               "dataset": "suricata.eve"
+             }
+           }
+         },
+         {
+           "_index": ".ds-filebeat-8.19.16-2026.06.08-000001",
+           "_id": "Vou1q54Bhi3Q8o036M1u",
+           "_score": 1,
+           "_source": {
+             "@timestamp": "2026-06-09T09:27:58.712Z",
+             "host": {
+               "name": "ubuntu-soc"
+             },
+             "event": {
+               "dataset": "suricata.eve"
+             }
+           }
+         },
+         {
+           "_index": ".ds-filebeat-8.19.16-2026.06.08-000001",
+           "_id": "V4u1q54Bhi3Q8o036M1u",
+           "_score": 1,
+           "_source": {
+             "@timestamp": "2026-06-09T09:27:58.712Z",
+             "host": {
+               "name": "ubuntu-soc"
+             },
+             "event": {
+               "dataset": "suricata.eve"
+             }
+           }
+         },
+         {
+           "_index": ".ds-filebeat-8.19.16-2026.06.08-000001",
+           "_id": "WIu1q54Bhi3Q8o036M1u",
+           "_score": 1,
+           "_source": {
+             "message": "",
+             "@timestamp": "2026-06-09T09:27:59.028Z",
+             "host": {
+               "name": "ubuntu-soc"
+             },
+             "event": {
+               "dataset": "suricata.eve"
+             }
+           }
+         },
+         {
+           "_index": ".ds-filebeat-8.19.16-2026.06.08-000001",
+           "_id": "WYu1q54Bhi3Q8o036M1u",
+           "_score": 1,
+           "_source": {
+             "message": "",
+             "@timestamp": "2026-06-09T09:27:59.029Z",
+             "host": {
+               "name": "ubuntu-soc"
+             },
+             "event": {
+               "dataset": "suricata.eve"
+             }
+           }
+         },
+         {
+           "_index": ".ds-filebeat-8.19.16-2026.06.08-000001",
+           "_id": "Wou1q54Bhi3Q8o036M1u",
+           "_score": 1,
+           "_source": {
+             "message": "",
+             "@timestamp": "2026-06-09T09:27:59.120Z",
+             "host": {
+               "name": "ubuntu-soc"
+             },
+             "event": {
+               "dataset": "suricata.eve"
+             }
+           }
+         },
+         {
+           "_index": ".ds-filebeat-8.19.16-2026.06.08-000001",
+           "_id": "W4u1q54Bhi3Q8o036M1u",
+           "_score": 1,
+           "_source": {
+             "message": "",
+             "@timestamp": "2026-06-09T09:27:59.981Z",
+             "host": {
+               "name": "ubuntu-soc"
+             },
+             "event": {
+               "dataset": "suricata.eve"
+             }
+           }
+         },
+         {
+           "_index": ".ds-filebeat-8.19.16-2026.06.08-000001",
+           "_id": "XIu1q54Bhi3Q8o036M1u",
+           "_score": 1,
+           "_source": {
+             "message": "",
+             "@timestamp": "2026-06-09T09:27:59.982Z",
+             "host": {
+               "name": "ubuntu-soc"
+             },
+             "event": {
+               "dataset": "suricata.eve"
+             }
+           }
+         },
+         {
+           "_index": ".ds-filebeat-8.19.16-2026.06.08-000001",
+           "_id": "XYu1q54Bhi3Q8o036M1u",
+           "_score": 1,
+           "_source": {
+             "message": "",
+             "@timestamp": "2026-06-09T09:28:00.049Z",
+             "host": {
+               "name": "ubuntu-soc"
+             },
+             "event": {
+               "dataset": "suricata.eve"
+             }
+           }
+         },
+         {
+           "_index": ".ds-filebeat-8.19.16-2026.06.08-000001",
+           "_id": "Xou1q54Bhi3Q8o036M1u",
+           "_score": 1,
+           "_source": {
+             "@timestamp": "2026-06-09T09:28:00.131Z",
+             "host": {
+               "name": "ubuntu-soc"
+             },
+             "event": {
+               "dataset": "suricata.eve"
+             }
+           }
+         },
+         {
+           "_index": ".ds-filebeat-8.19.16-2026.06.08-000001",
+           "_id": "X4u1q54Bhi3Q8o036M1u",
+           "_score": 1,
+           "_source": {
+             "message": "",
+             "@timestamp": "2026-06-09T09:28:00.435Z",
+             "host": {
+               "name": "ubuntu-soc"
+             },
+             "event": {
+               "dataset": "suricata.eve"
+             }
+           }
+         },
+         {
+           "_index": ".ds-filebeat-8.19.16-2026.06.08-000001",
+           "_id": "YIu1q54Bhi3Q8o036M1u",
+           "_score": 1,
+           "_source": {
+             "message": "",
+             "@timestamp": "2026-06-09T09:28:00.436Z",
+             "host": {
+               "name": "ubuntu-soc"
+             },
+             "event": {
+               "dataset": "suricata.eve"
+             }
+           }
+         },
+         {
+           "_index": ".ds-filebeat-8.19.16-2026.06.08-000001",
+           "_id": "YYu1q54Bhi3Q8o036M1u",
+           "_score": 1,
+           "_source": {
+             "message": "",
+             "@timestamp": "2026-06-09T09:28:00.437Z",
+             "host": {
+               "name": "ubuntu-soc"
+             },
+             "event": {
+               "dataset": "suricata.eve"
+             }
+           }
+         },
+         {
+           "_index": ".ds-filebeat-8.19.16-2026.06.08-000001",
+           "_id": "You1q54Bhi3Q8o036M1u",
+           "_score": 1,
+           "_source": {
+             "message": "",
+             "@timestamp": "2026-06-09T09:28:00.440Z",
+             "host": {
+               "name": "ubuntu-soc"
+             },
+             "event": {
+               "dataset": "suricata.eve"
+             }
+           }
+         },
+         {
+           "_index": ".ds-filebeat-8.19.16-2026.06.08-000001",
+           "_id": "Y4u1q54Bhi3Q8o036M1u",
+           "_score": 1,
+           "_source": {
+             "message": "",
+             "@timestamp": "2026-06-09T09:28:00.464Z",
+             "host": {
+               "name": "ubuntu-soc"
+             },
+             "event": {
+               "dataset": "suricata.eve"
+             }
+           }
+         },
+         {
+           "_index": ".ds-filebeat-8.19.16-2026.06.08-000001",
+           "_id": "ZIu1q54Bhi3Q8o036M1u",
+           "_score": 1,
+           "_source": {
+             "message": "",
+             "@timestamp": "2026-06-09T09:28:00.533Z",
+             "host": {
+               "name": "ubuntu-soc"
+             },
+             "event": {
+               "dataset": "suricata.eve"
+             }
+           }
+         },
+         {
+           "_index": ".ds-filebeat-8.19.16-2026.06.08-000001",
+           "_id": "ZYu1q54Bhi3Q8o036M1u",
+           "_score": 1,
+           "_source": {
+             "@timestamp": "2026-06-09T09:28:00.704Z",
+             "host": {
+               "name": "ubuntu-soc"
+             },
+             "event": {
+               "dataset": "suricata.eve"
+             }
+           }
+         }
+       ]
+     }
+   }
+   ```
+
+   On peut en conclure plein de points:
+   1. Filebeat est bien connecté à Elasticsearch
+
+      On a des logs qui sont connectés automatiquement, et l'index .`ds-filebeat-*` contient plusieurs centaines de milliers d'événements.
+
+   2. Suricata est bien déployé sur la machine puisque l'on trouve tous les événements de type `suricata.eve` dans les logs collectés par Filebeat.
+
+      ```json
+      "event": {
+        "dataset": "suricata.eve"
+      }
+      ```
+
+   3. Le serveur fait aussi SOC/SIEM puisque le hostname des événements est `ubuntu-soc`.
+
+      ```json
+      "host": {
+        "name": "ubuntu-soc"
+      }
+      ```
+
+      Présence simultanée d'Elasticsearch, de Kibana et de Filebeat, avec des événements de type `suricata.eve` collectés, suggère que la machine cible est configurée pour jouer un rôle de SOC/SIEM, centralisant des données de sécurité pour analyse et corrélation.
+
+   4. Les premières requêtes ne montrent que la couche "metadata":
+   - timestamp
+   - host.name
+   - event.dataset
+
+     Les messages eux-mêmes sont vides, ce qui suggère que les données collectées sont soit filtrées, soit que les événements indexés ne contiennent pas de payloads exploitables.
+
+     ```json
+     "message": ""
+     ```
