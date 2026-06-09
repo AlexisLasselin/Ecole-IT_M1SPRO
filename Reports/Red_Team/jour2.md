@@ -439,3 +439,44 @@ L’analyse croisée des sources publiques confirme que la version Joomla! 4.2.7
 La validation sur cible montre que la surface API est bien présente mais protégée par authentification.
 
 Ainsi, la vulnérabilité ne peut pas être exploitée directement dans l’état actuel, mais la surface d’attaque reste pertinente dans une logique d’investigation plus large de l’écosystème applicatif.
+
+## Plan d’attaque théorique
+
+L’environnement cible présente plusieurs services exposés, notamment Joomla!, Elasticsearch, Kibana et Apache httpd. Ces composants constituent une architecture applicative interconnectée, où chaque service peut contribuer à la surface d’attaque globale.
+
+Dans ce contexte, l’analyse des interactions entre les composants permet d’identifier des vecteurs d’attaque indirects, en particulier via la centralisation des logs et événements applicatifs.
+
+### Joomla!
+
+Le CMS Joomla! constitue un point d’entrée applicatif potentiel et génère de nombreuses données lors de son utilisation, notamment :
+
+- logs d’authentification
+- erreurs PHP
+- requêtes API
+- sessions utilisateurs
+- traces HTTP
+
+Ces informations peuvent être journalisées et centralisées dans une stack ELK.
+
+Dans une telle architecture, il est pertinent d’évaluer si des informations sensibles issues de l’application sont exposées indirectement via les systèmes de logs.
+
+### Elasticsearch / Kibana
+
+Lors de l’analyse initiale, la stack ELK a été identifiée comme centralisant des données issues des services de la plateforme, incluant des logs système et applicatifs.
+
+Elasticsearch joue ici le rôle de hub de centralisation des événements, ce qui implique que des données générées par Joomla! peuvent potentiellement être indexées dans les différents index observés.
+
+Dans ce contexte, une mauvaise segmentation des données ou une exposition non contrôlée des index pourrait conduire à l’accès à des informations sensibles issues de l’activité applicative.
+
+Par ailleurs, l’accès à Kibana et aux fonctionnalités associées constitue un point d’entrée privilégié pour l’exploration des données stockées dans Elasticsearch.
+
+### Hypothèse de chaîne d’attaque
+
+Dans une approche Red Team, l’architecture observée permet de modéliser la chaîne suivante :
+
+- Joomla! génère des événements applicatifs
+- Ces événements sont collectés par Filebeat
+- Les données sont centralisées dans Elasticsearch
+- Kibana permet leur consultation et leur analyse
+
+Cette interconnexion transforme des interactions applicatives simples en sources potentielles d’informations exploitables dans un contexte d’attaque.
