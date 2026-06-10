@@ -74,6 +74,17 @@ Les recherches ont porté sur :
 
 Une attention particulière a été portée à la vulnérabilité CVE-2023-23752 affectant Joomla! 4.2.7. Les analyses réalisées montrent que la surface concernée est présente sur l'environnement mais qu'aucune exploitation directe n'a été observée durant cette journée.
 
+## Recommandations
+
+Les travaux réalisés lors de cette phase ont permis d'améliorer la visibilité des événements de sécurité au sein du SOC. Les règles Suricata personnalisées développées pour les principaux scénarios d'attaque doivent être régulièrement révisées afin de limiter les faux positifs et de conserver un niveau de détection pertinent.
+
+Il est recommandé de poursuivre l'enrichissement des alertes en associant systématiquement les adresses IP sources, les niveaux de sévérité et les catégories d'attaque. Cette approche facilite l'analyse des événements et permet une meilleure priorisation des incidents.
+
+La supervision doit également être renforcée autour des applications exposées, notamment Joomla, Tomcat et PostgreSQL. Une attention particulière doit être portée aux tentatives d'exploitation liées aux vulnérabilités du Top 10 OWASP ainsi qu'aux activités de post-exploitation telles que les reverse shells ou les webshells.
+
+Enfin, il est recommandé de mettre en place une procédure de revue quotidienne des tableaux de bord Kibana afin de vérifier le bon fonctionnement de la collecte des journaux, d'identifier rapidement les anomalies et de garantir une détection efficace des activités menées par la Red Team.
+
+
 ## Conclusion
 
 Cette deuxième journée a permis d'améliorer significativement la capacité de supervision de l'infrastructure tout en observant les premières phases d'investigation approfondie réalisées par la cellule Red Team.
