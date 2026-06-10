@@ -106,6 +106,18 @@ Les informations ont été recoupées avec les bases de référence telles que :
 
 Cette phase permettra d'orienter les futures activités de surveillance et de renforcer progressivement les mécanismes de détection.
 
+
+## Recommandations
+
+Les premières activités de reconnaissance réalisées par la Red Team ont permis d'identifier plusieurs services accessibles depuis le réseau, notamment Elasticsearch, Kibana et SSH. Même si aucune vulnérabilité exploitable n'a été identifiée lors des premiers scans, l'exposition de ces services constitue une surface d'attaque importante qui doit être surveillée.
+
+Il est recommandé de limiter l'exposition des services d'administration uniquement aux adresses IP autorisées et de mettre en place une authentification forte sur les services Elasticsearch et Kibana. Les accès SSH doivent être protégés par des mots de passe robustes ou, idéalement, par une authentification à clé publique.
+
+L'analyse a également montré l'importance de disposer d'une visibilité complète sur le trafic réseau. La chaîne de collecte composée de Suricata, Filebeat, Elasticsearch et Kibana doit être maintenue opérationnelle afin de garantir la remontée des événements de sécurité et la détection des activités suspectes.
+
+Enfin, il est recommandé de maintenir à jour l'ensemble des composants déployés et de surveiller régulièrement les vulnérabilités connues associées aux technologies utilisées, notamment Joomla, Tomcat, PostgreSQL et Elastic Stack.
+
+
 ## Conclusion
 
 Cette première journée a permis de mettre en place les principaux composants de supervision de l'infrastructure et de valider leur fonctionnement. Les activités de reconnaissance menées par la cellule Red Team ont pu être observées et corrélées avec les événements collectés par Suricata.
