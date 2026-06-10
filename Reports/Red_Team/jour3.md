@@ -130,7 +130,7 @@ Si cette vulnérabilité était exploitable, les impacts seraient critiques :
 - Accès potentiel au système hôte
 - Possibilité de pivot vers d’autres composants internes
 
-## Conclusion du Jour 3
+## Conclusion de la matinée du jour 3
 
 L’analyse réalisée durant cette journée met en évidence deux aspects majeurs :
 
