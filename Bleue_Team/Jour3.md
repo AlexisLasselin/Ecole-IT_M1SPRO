@@ -4,7 +4,7 @@
 
 IP de la VM CyberMed : 10.156.115.137
 
-IP Red Team : 10.156.115.217 et 10.156.115.115
+IP Red Team : 10.156.115.217 
 
 IP Administrateur : 10.156.115.183 et 10.156.115.139
 
