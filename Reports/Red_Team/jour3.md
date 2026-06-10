@@ -143,3 +143,84 @@ Ainsi, la cible présente à la fois :
 - deux surfaces d’attaque exploitables (Joomla! et service Tomcat vulnérable)
 
 La prochaine étape consistera à corréler ces éléments afin d’évaluer un scénario de compromission complet de l’infrastructure.
+
+## Analyse de la surface applicative – Apache Tomcat
+
+Suite aux analyses réalisées le matin, un service Apache Tomcat 8.0.43 a été identifié sur la cible, exposé sur le port 8081.
+Cette version est associée à la vulnérabilité CVE-2020-9484, une faille critique liée à la désérialisation de sessions pouvant conduire à une exécution de code à distance dans certaines conditions de configuration.
+
+L’objectif de cette phase est d’évaluer si le service présente une surface d’attaque compatible avec l’exploitation théorique de cette vulnérabilité.
+
+### Reconnaissance du service Tomcat
+
+Une phase de reconnaissance a été effectuée afin d’observer le comportement du service et d’identifier les informations exposées.
+
+```bash
+curl -i http://10.156.115.137:8081/
+```
+
+**Résultat :**
+
+```plaintext
+HTTP/1.1 200 OK
+Server: Apache-Coyote/1.1
+Content-Type: text/html;charset=UTF-8
+Transfer-Encoding: chunked
+Date: Wed, 10 Jun 2026 12:28:30 GMT
+```
+
+La réponse du serveur confirme l’exposition d’un service Apache Tomcat 8.0.43 sur le port 8081, avec une configuration par défaut. Aucune information supplémentaire n’est révélée dans les en-têtes HTTP, ce qui est typique d’une configuration standard de Tomcat.
+
+### Analyse des prérequis d’exploitation
+
+Pour que la CVE-2020-9484 soit exploitable, plusieurs conditions doivent être réunies :
+
+- La gestion de sessions persistantes doit être activée dans la configuration de Tomcat.
+- Le mécanisme de désérialisation doit être vulnérable, ce qui est généralement le cas pour les versions antérieures à 8.5.51 et 9.0.31.
+- Le service doit être accessible depuis l’extérieur, ce qui est confirmé par la reconnaissance.
+
+Pour vérifier la présence de ces conditions, une analyse plus approfondie de la configuration du serveur serait nécessaire, notamment en examinant les fichiers de configuration de Tomcat (server.xml, context.xml) et en testant le comportement du mécanisme de gestion des sessions.
+
+### Scénario d’exploitation potentiel de la CVE-2020-9484
+
+Dans un scénario théorique, si les conditions d’exploitation sont réunies, un attaquant pourrait envoyer une requête spécialement conçue pour influencer le processus de désérialisation des sessions. Cela pourrait conduire à une exécution de code arbitraire sur le serveur Tomcat, permettant ainsi une compromission complète du service et potentiellement un accès au système hôte.
+
+### Impact potentiel de l’exploitation de la CVE-2020-9484
+
+L’exploitation de cette vulnérabilité pourrait avoir des conséquences graves, notamment :
+
+- Exécution de code à distance (RCE)
+- Compromission du service Tomcat
+- Accès potentiel au système hôte
+- Possibilité de pivot vers d’autres composants internes
+
+### Corrélation avec la supervision observée
+
+Les analyses réalisées précédemment sur la stack ELK ont démontré que les activités réseau sont surveillées et centralisées par le SOC à l'aide de Suricata, Filebeat et Elasticsearch.
+
+Toute tentative d'exploitation visant le service Tomcat serait donc susceptible de générer des événements réseau visibles par les outils de supervision. En revanche, aucune donnée collectée jusqu'à présent ne permet de confirmer la présence d'une journalisation applicative spécifique à Tomcat dans Elasticsearch.
+
+Cette situation suggère que le SOC dispose d'une visibilité satisfaisante sur le trafic réseau mais que la détection d'événements applicatifs liés à Tomcat pourrait être plus limitée.
+
+### Conclusion de l'analyse Tomcat
+
+L'identification d'un serveur Apache Tomcat 8.0.43 constitue un élément important de la surface d'attaque de la cible.
+
+La présence d'une version affectée par la CVE-2020-9484 ne permet pas à elle seule de conclure à une vulnérabilité exploitable, plusieurs conditions de configuration devant être réunies pour permettre une compromission effective.
+
+Néanmoins, compte tenu de l'impact potentiel associé à cette vulnérabilité, le service Tomcat doit être considéré comme une cible prioritaire pour les phases ultérieures de l'évaluation.
+
+Les investigations futures devront permettre de déterminer si les conditions d'exploitation sont effectivement réunies et d'évaluer la capacité du SOC à détecter une activité malveillante visant ce service.
+
+## Identification de services internes potentiellement exploitables
+
+L'analyse de l'environnement et du syllabus de l'épreuve met en évidence la présence potentielle d'un serveur PostgreSQL vulnérable à la CVE-2018-1058. Cette vulnérabilité étant une élévation de privilèges, elle sera étudiée dans un second temps, après l'obtention d'un accès initial à l'application ou à la base de données.
+
+## Pistes d'investigation pour la journée 4
+
+- Analyse approfondie de la configuration du service Tomcat pour évaluer les conditions d'exploitation de la CVE-2020-9484.
+- Recherche de mécanismes de gestion de sessions et de désérialisation dans Tomcat.
+- Évaluation de la capacité du SOC à détecter des activités malveillantes ciblant le service Tomcat.
+- Exploration de la surface d'attaque liée au CMS Joomla! 4.2.7, notamment en recherchant des vulnérabilités exploitables.
+- Préparation d'une stratégie d'exploitation pour la CVE-2020-9484 en cas de confirmation de la vulnérabilité.
+- Analyse de la configuration de PostgreSQL pour identifier les conditions d'exploitation de la CVE-2018-1058.
