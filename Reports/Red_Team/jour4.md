@@ -107,3 +107,73 @@ Le risque associé à ce service est donc considéré comme significatif et mér
 L'investigation du service Apache Tomcat confirme la présence d'une surface d'attaque potentiellement sensible. Toutefois, les éléments actuellement disponibles ne permettent pas de démontrer que les conditions d'exploitation de la CVE-2020-9484 sont réunies.
 
 Le service reste néanmoins une cible prioritaire pour les phases ultérieures de l'évaluation en raison de l'impact potentiel associé à une compromission réussie.
+
+## Priorisation des vecteurs d'attaque
+
+À ce stade de l’évaluation, plusieurs surfaces d’attaque ont été identifiées au sein de l’infrastructure cible :
+
+- Apache Tomcat 8.0.43 (CVE-2020-9484)
+- CMS Joomla! 4.2.7
+- Stack ELK accessible sans authentification
+- Présence d’un service PostgreSQL (cible d’escalade)
+
+Afin d’optimiser la démarche d’exploitation, une phase de priorisation est nécessaire pour déterminer le vecteur le plus pertinent pour un accès initial.
+
+## Évaluation des vecteurs identifiés
+
+### Apache Tomcat 8.0.43
+
+Le service Tomcat présente un risque potentiel élevé en raison de la CVE-2020-9484.
+Cependant, son exploitation dépend de conditions de configuration spécifiques qui n’ont pas pu être confirmées à ce stade de l’analyse.
+
+Par conséquent, bien que l’impact potentiel soit critique, le niveau d’incertitude associé à l’exploitabilité reste important.
+
+### CMS Joomla! 4.2.7
+
+Le CMS Joomla! constitue une surface d’attaque web exposée et accessible publiquement.
+Les CMS de ce type sont fréquemment ciblés en raison :
+
+- de la présence potentielle de composants vulnérables ;
+- d’extensions tierces non maintenues ;
+- de mauvaises configurations applicatives.
+
+Contrairement à Tomcat, ce vecteur présente une surface d’attaque plus large et plus directement exploitable dans un contexte Red Team.
+
+### PostgreSQL
+
+Le service PostgreSQL identifié dans le cadre du syllabus correspond à une vulnérabilité d’escalade de privilèges (CVE-2018-1058).
+Cependant, cette vulnérabilité nécessite un accès préalable au système de base de données, ce qui implique qu’elle ne peut être exploitée qu’après compromission initiale d’un autre service.
+
+### Choix du vecteur d’accès initial
+
+Sur la base de l’analyse comparative, le CMS Joomla! 4.2.7 est retenu comme **vecteur principal d’accès initial**.
+
+Ce choix est motivé par :
+
+- une surface d’attaque directement accessible depuis le réseau externe ;
+- une probabilité d’exploitation plus élevée que Tomcat dans un contexte inconnu ;
+- une logique cohérente de chaîne d’attaque (web → système → base de données).
+
+Tomcat est conservé comme vecteur secondaire potentiel en cas de blocage sur la voie principale.
+
+### Préparation de la phase d’accès initial
+
+La prochaine étape de l’évaluation consiste à :
+
+- approfondir l’analyse du CMS Joomla! 4.2.7 ;
+- identifier les composants, extensions et pages exposées ;
+- rechercher des vulnérabilités exploitables connues ;
+- déterminer un éventuel point d’entrée permettant une compromission initiale.
+
+Cette phase marquera la transition entre l’analyse de surface et une phase d’exploitation contrôlée dans le cadre de l’évaluation Red Team.
+
+## Validation active du vecteur d’accès initial (CMS Joomla! 4.2.7)
+
+L’analyse fonctionnelle de l’application met en évidence une surface d’attaque typique d’un CMS :
+
+- pages dynamiques générées côté serveur ;
+- possibilité de composants additionnels (plugins / extensions) ;
+- présence probable de fonctionnalités d’administration ;
+- exposition potentielle de répertoires et fichiers sensibles.
+
+Dans ce contexte, les CMS constituent généralement une cible privilégiée en raison de leur complexité et de la fréquence des vulnérabilités liées aux extensions tierces.
