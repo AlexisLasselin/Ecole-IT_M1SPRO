@@ -102,7 +102,7 @@ Bien que l'exploitabilité de la CVE-2020-9484 ne puisse pas être confirmée à
 
 Le risque associé à ce service est donc considéré comme significatif et mérite des investigations complémentaires.
 
-### Conclusion intermédiaire
+### Conclusion intermédiaire Apache Tomcat
 
 L'investigation du service Apache Tomcat confirme la présence d'une surface d'attaque potentiellement sensible. Toutefois, les éléments actuellement disponibles ne permettent pas de démontrer que les conditions d'exploitation de la CVE-2020-9484 sont réunies.
 
@@ -177,3 +177,74 @@ L’analyse fonctionnelle de l’application met en évidence une surface d’at
 - exposition potentielle de répertoires et fichiers sensibles.
 
 Dans ce contexte, les CMS constituent généralement une cible privilégiée en raison de leur complexité et de la fréquence des vulnérabilités liées aux extensions tierces.
+
+## Reconnaissance du service Joomla
+
+Une première analyse du service exposé sur le port 8080 a été réalisée afin d’identifier la nature de l’application et les technologies associées.
+
+```bash
+curl -i http://10.156.115.137:8080/
+```
+
+**Résultat :**
+
+```plaintext
+HTTP/1.1 200 OK
+Date: Thu, 11 Jun 2026 12:26:38 GMT
+Server: Apache/2.4.54 (Debian)
+X-Powered-By: PHP/7.4.33
+Set-Cookie: 7f16ea73b61c47b44254bba0e0b2cf8d=e10f73ec59ff19c4ef981ecf0c7aeb32; path=/; HttpOnly
+x-frame-options: SAMEORIGIN
+referrer-policy: strict-origin-when-cross-origin
+cross-origin-opener-policy: same-origin
+Expires: Wed, 17 Aug 2005 00:00:00 GMT
+Last-Modified: Thu, 11 Jun 2026 12:26:39 GMT
+Cache-Control: no-store, no-cache, must-revalidate, post-check=0, pre-check=0
+Pragma: no-cache
+Vary: Accept-Encoding
+Transfer-Encoding: chunked
+Content-Type: text/html; charset=utf-8
+```
+
+La réponse HTTP indique une redirection vers une interface de connexion, ce qui confirme la présence d’un mécanisme d’authentification protégeant l’accès à l’administration ou aux fonctionnalités avancées du CMS.
+
+Les éléments suivants sont particulièrement pertinents :
+
+- Le serveur web utilisé est Apache 2.4.54, une version relativement récente mais qui peut être vulnérable si elle n’est pas correctement configurée.
+- La présence de PHP 7.4.33 indique que l’application est développée en PHP, ce qui est cohérent avec l’utilisation de Joomla!.
+- L’absence d’en-têtes de sécurité supplémentaires (Content-Security-Policy, X-Content-Type-Options, etc.) suggère une configuration potentiellement laxiste du serveur web, ce qui peut faciliter l’exploitation de vulnérabilités applicatives.
+- La présence d’un cookie de session sans attributs de sécurité renforcés (Secure, SameSite) peut indiquer une gestion des sessions vulnérable.
+- L’absence de mécanismes de cache efficaces (Cache-Control: no-store, no-cache) peut indiquer une configuration de sécurité insuffisante, bien que cela puisse également être une mesure de protection contre les attaques de type Cross-Site Scripting (XSS).
+
+## Analyse de la surface applicative
+
+La présence d’une interface d’authentification modifie la surface d’attaque initialement observée. Le CMS ne semble pas directement exploitable sans authentification préalable.
+
+Dans ce contexte, les axes d’analyse deviennent les suivants :
+
+- identification de la version exacte du CMS via les pages publiques ;
+- analyse des pages accessibles sans authentification ;
+- évaluation du mécanisme de login (messages d’erreur, comportement, structure) ;
+- recherche de potentielles vulnérabilités sur le portail d’authentification ;
+- vérification de composants ou endpoints exposés en dehors de la zone protégée.
+
+## Évaluation du risque
+
+Même si l’accès est protégé par authentification, Joomla! reste une surface d’attaque pertinente en raison de :
+
+- la possibilité de failles sur le portail de connexion ;
+- l'exposition fréquente de composants publics non protégés ;
+- les vulnérabilités potentielles liées à la version 4.2.7 et ses extensions ;
+- la possibilité d’attaques ciblées sur l’authentification (bruteforce, erreurs de configuration, divulgation d’informations).
+
+## Conclusion intermédiaire Joomla!
+
+Le CMS Joomla! 4.2.7 est accessible mais protégé par une interface d’authentification.
+
+À ce stade, il ne constitue pas un point d’entrée direct mais reste une surface d’attaque potentielle, notamment via :
+
+- le mécanisme de login ;
+- les composants ou pages accessibles sans authentification ;
+- d'éventuelles vulnérabilités associées à la version déployée.
+
+Une analyse complémentaire est nécessaire afin d’identifier si des informations ou fonctionnalités accessibles sans authentification peuvent être exploitées pour progresser dans l’évaluation.
