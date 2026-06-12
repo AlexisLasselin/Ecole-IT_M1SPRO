@@ -1,0 +1,38 @@
+# Rapport Blue Team - Jour 5
+
+## Présentation finale du projet CyberMed
+
+Cette cinquième journée a été consacrée à la présentation finale du projet CyberMed devant l'encadrant et les différents participants.
+
+L'équipe a présenté l'architecture de sécurité mise en place au cours du projet, notamment :
+
+* Le déploiement de Suricata IDS pour la détection des attaques réseau.
+* La collecte et la centralisation des journaux de sécurité via Filebeat et Elasticsearch.
+* La visualisation des événements de sécurité dans Kibana.
+* La création de règles de détection personnalisées adaptées au contexte CyberMed.
+* La mise en œuvre de mesures de durcissement sur les services exposés.
+* La sécurisation de la plateforme ELK par authentification.
+* Le filtrage réseau permettant de contrôler l'accès aux services critiques.
+
+Une démonstration des capacités de détection a également été réalisée à partir des attaques simulées par la Red Team, permettant de mettre en évidence la remontée des alertes dans les tableaux de bord SOC.
+
+## Participants
+
+### Blue Team
+
+* Christine
+* Teddy
+* Ibrahim
+
+### Red Team
+
+* Alex
+* ALAO
+
+### Internvenant
+
+* Nouaari Hichem
+
+## Conclusion
+
+La présentation a permis de démontrer le fonctionnement global de l'infrastructure CyberMed ainsi que les différentes mesures de sécurité mises en œuvre. Les objectifs définis au début du projet ont été atteints avec la mise en place d'un environnement supervisé capable de détecter, centraliser et visualiser les événements de sécurité générés lors des exercices Red Team / Blue Team.
