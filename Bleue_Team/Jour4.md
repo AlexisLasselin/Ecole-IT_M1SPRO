@@ -34,18 +34,18 @@ Cette opération a permis de conserver les index existants, les tableaux de bord
 
 Dans le cadre des activités de sécurisation de l'infrastructure CyberMed, une analyse des identifiants par défaut des applications exposées a été réalisée.
 
-### Sécurisation de Tomcat
+### Sécurisation de Tomcat: http://10.156.115.137:8081/manager/html
 
-L'application Tomcat utilisait les identifiants par défaut :
+L'application Tomcat utilisait les identifiants par défaut : 
 
 * Utilisateur : tomcat
 * Mot de passe : tomcat
 
 Ces identifiants étant largement connus des attaquants, ils représentent un risque important d'accès non autorisé à l'interface d'administration. Le mot de passe a été remplacé par un mot de passe robuste afin de renforcer la sécurité du service.
 
-### Sécurisation de Joomla
+### Sécurisation de Joomla : http://10.156.115.137:8080/administrator/index.php
 
-L'application Joomla utilisait le compte administrateur avec les identifiants suivants :
+L'application Joomla utilisait le compte administrateur avec les identifiants suivants : 
 
 * Utilisateur : admin
 * Mot de passe : admin
